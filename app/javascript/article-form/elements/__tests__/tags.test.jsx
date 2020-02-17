@@ -2,28 +2,15 @@ import { h, render as preactRender } from 'preact';
 import render from 'preact-render-to-json';
 import { shallow } from 'preact-render-spy';
 import { JSDOM } from 'jsdom';
-import fetch from 'jest-fetch-mock';
 import Tags from '../../../shared/components/tags';
-
-global.fetch = fetch;
-
-const sampleResponse = JSON.stringify({
-  result: [
-    {
-      name: 'git',
-      hotness_score: 0,
-      supported: true,
-      short_summary: null,
-    },
-  ],
-});
+import algoliasearch from '../__mocks__/algoliasearch';
 
 describe('<Tags />', () => {
   beforeEach(() => {
     const doc = new JSDOM('<!doctype html><html><body></body></html>');
     global.document = doc;
     global.window = doc.defaultView;
-    fetch.mockResponse(sampleResponse);
+    global.window.algoliasearch = algoliasearch;
   });
 
   it('renders properly', () => {

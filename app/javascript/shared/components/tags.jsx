@@ -36,6 +36,14 @@ class Tags extends Component {
       prevLen: 0,
       showingRulesForTag: null,
     };
+
+    const algoliaId = document.querySelector("meta[name='algolia-public-id']")
+      .content;
+    const algoliaKey = document.querySelector("meta[name='algolia-public-key']")
+      .content;
+    const env = document.querySelector("meta[name='environment']").content;
+    const client = algoliasearch(algoliaId, algoliaKey);
+    this.index = client.initIndex(`Tag_${env}`);
   }
 
   componentDidMount() {
@@ -313,24 +321,20 @@ class Tags extends Component {
       });
     }
     const { listing } = this.props;
-    return fetch(`/search/tags?name=${query}`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'X-CSRF-Token': window.csrfToken,
-        'Content-Type': 'application/json',
-      },
-      credentials: 'same-origin',
-    })
-      .then(response => response.json())
-      .then(response => {
+    return this.index
+      .search(query, {
+        hitsPerPage: 8,
+        attributesToHighlight: [],
+        filters: 'supported:true',
+      })
+      .then(content => {
         if (listing === true) {
           const { additionalTags } = this.state;
           const { category } = this.props;
           const additionalItems = (additionalTags[category] || []).filter(t =>
             t.includes(query),
           );
-          const resultsArray = response.result;
+          const resultsArray = content.hits;
           additionalItems.forEach(t => {
             if (!resultsArray.includes(t)) {
               resultsArray.push({ name: t });
@@ -340,7 +344,7 @@ class Tags extends Component {
         // updates searchResults array according to what is being typed by user
         // allows user to choose a tag when they've typed the partial or whole word
         this.setState({
-          searchResults: response.result,
+          searchResults: content.hits,
         });
       });
   }
